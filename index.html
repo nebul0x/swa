@@ -25,7 +25,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,15,30,0.9
 .btn-primary:hover{background:#005fa3}
 
 /* ── HERO ── */
-.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 40px 60px;text-align:center;position:relative;overflow:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 40px 60px;text-align:center;position:relative;overflow:visible}
 .glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(0,120,212,0.10) 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none}
 .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(80,230,255,0.10);border:1px solid rgba(80,230,255,0.25);border-radius:100px;padding:6px 18px;font-size:13px;font-weight:600;color:#50e6ff;margin-bottom:32px;opacity:0;animation:fadeUp .6s ease .1s forwards}
 .hero-title1{font-size:clamp(34px,6.5vw,70px);font-weight:700;letter-spacing:-2px;line-height:1.1;color:white;display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
@@ -43,7 +43,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,15,30,0.9
 @keyframes gradMove{0%{background-position:0% 50%}100%{background-position:100% 50%}}
 
 /* ── SEARCH WIDGET ── */
-.search-widget{width:100%;max-width:680px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:20px 24px;backdrop-filter:blur(12px);position:relative;opacity:0;animation:fadeUp .6s ease 1s forwards}
+.search-widget{width:100%;max-width:680px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:20px 24px;backdrop-filter:blur(12px);position:relative;opacity:0;animation:fadeUp .6s ease 1s forwards;z-index:50}
 .sw-label{font-size:11px;color:rgba(255,255,255,0.35);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;text-align:left}
 .sw-row{display:flex;gap:10px}
 .sw-wrap{flex:1;position:relative}
@@ -56,7 +56,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,15,30,0.9
 .sw-filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .sw-tag{padding:4px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:100px;font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;transition:all .2s}
 .sw-tag.active,.sw-tag:hover{background:rgba(80,230,255,0.12);border-color:#50e6ff;color:#50e6ff;font-weight:600}
-.results-popup{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#0f1d2e;border:1px solid rgba(255,255,255,0.10);border-radius:10px;overflow:hidden;z-index:20;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none}
+.results-popup{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#0f1d2e;border:1px solid rgba(255,255,255,0.10);border-radius:10px;overflow-y:auto;max-height:420px;z-index:200;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none}
 .results-popup.show{display:block}
 .rp-header{padding:8px 14px;background:rgba(0,120,212,0.12);border-bottom:1px solid rgba(255,255,255,0.06);font-size:11px;color:#50e6ff;font-weight:600;letter-spacing:1px}
 .rp-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:default;transition:background .15s}
@@ -226,7 +226,7 @@ footer{background:#060a12;padding:48px 40px 28px;border-top:1px solid rgba(255,2
         <input id="searchInput" type="text" placeholder='z.B. "Cloud Datenbank", "KI serverless"...'/>
         <div class="results-popup" id="resultsPopup"></div>
       </div>
-      <button class="sw-btn" onclick="doSearch()">Suchen →</button>
+      <button class="sw-btn" id="searchBtn">Suchen →</button>
     </div>
     <div class="sw-filters" id="filters">
       <span class="sw-tag active" data-tag="all">Alle</span>
@@ -525,18 +525,12 @@ words.forEach((w, i) => {
 })();
 
 /* ════════════════════════════════════
-   SEARCH
+   AZURE AI SEARCH – ECHTE API
+   ▶ HIER ANPASSEN:
 ════════════════════════════════════ */
-const SEARCH_DATA = [
-  {title:"Azure Container Apps",desc:"Skalierbare Container ohne Serververwaltung.",tag:"Compute",score:0.97},
-  {title:"Azure OpenAI Service",desc:"GPT-4, DALL·E und Embeddings in eigenen Apps.",tag:"KI",score:0.96},
-  {title:"Azure AI Search",desc:"KI-gestützte Suche: Volltext, Vektor, Semantik.",tag:"KI",score:0.99},
-  {title:"Azure Cosmos DB",desc:"Global verteilte NoSQL-Datenbank, ms-Latenz.",tag:"Datenbank",score:0.93},
-  {title:"Azure Functions",desc:"Serverless Code – zahle nur was du nutzt.",tag:"Serverless",score:0.91},
-  {title:"Azure Blob Storage",desc:"Unbegrenzt Dateien und Bilder in der Cloud.",tag:"Storage",score:0.88},
-  {title:"Azure SQL Database",desc:"Verwaltete relationale DB auf SQL Server Basis.",tag:"Datenbank",score:0.92},
-  {title:"Azure Kubernetes Service",desc:"Verwaltetes K8s für Container-Workloads.",tag:"Compute",score:0.90},
-];
+const AZURE_ENDPOINT = "https://andri-adis-ai-search.search.windows.net";  // ← NICHT ändern
+const AZURE_INDEX    = "azure-dienste";                                      // ← NICHT ändern
+const AZURE_API_KEY  = "jQRMS1UNfaGtdiEPUgTTJnWYJJJHQYVFkp4l5g60X1AzSeADsAc6";                      // ← ✏️ DEINEN NEUEN ABFRAGESCHLÜSSEL EINFÜGEN
 
 let activeTag = "all";
 const popup = document.getElementById("resultsPopup");
@@ -547,39 +541,81 @@ document.querySelectorAll(".sw-tag").forEach(t => {
     document.querySelectorAll(".sw-tag").forEach(x => x.classList.remove("active"));
     t.classList.add("active");
     activeTag = t.dataset.tag;
-    doSearch();
+    if (input.value.trim()) doSearch();
   });
 });
 
-input.addEventListener("input", () => doSearch());
+input.addEventListener("input", () => {
+  clearTimeout(input._t);
+  input._t = setTimeout(doSearch, 350);
+});
 input.addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
-document.addEventListener("click", e => { if (!e.target.closest(".sw-wrap") && !e.target.closest(".sw-btn")) popup.classList.remove("show"); });
+document.getElementById("searchBtn").addEventListener("click", () => doSearch());
+document.addEventListener("click", e => {
+  if (!e.target.closest(".sw-wrap") && !e.target.closest(".sw-btn")) popup.classList.remove("show");
+});
 
-function doSearch() {
-  const q = input.value.toLowerCase().trim();
+async function doSearch() {
+  const q = input.value.trim();
   if (!q) { popup.classList.remove("show"); return; }
 
-  let res = SEARCH_DATA.filter(i =>
-    i.title.toLowerCase().includes(q) ||
-    i.desc.toLowerCase().includes(q) ||
-    i.tag.toLowerCase().includes(q)
-  );
-  if (activeTag !== "all") res = res.filter(i => i.tag === activeTag);
-  res = res.map(i => ({...i, rel: i.title.toLowerCase().includes(q) ? i.score : i.score*0.82}))
-           .sort((a,b) => b.rel - a.rel);
-
-  if (res.length === 0) {
-    popup.innerHTML = `<div class="rp-header">0 Treffer</div><div class="rp-empty">Keine Ergebnisse für „${input.value}"</div>`;
-  } else {
-    popup.innerHTML = `<div class="rp-header">${res.length} TREFFER · queryType: semantic · vectorSearch: hnsw</div>` +
-      res.slice(0,5).map(i => `
-        <div class="rp-item">
-          <span class="rp-score">@score: ${i.rel.toFixed(3)}</span>
-          <div class="rp-title">${i.title}<span class="rp-tag">${i.tag}</span></div>
-          <div class="rp-desc">${i.desc}</div>
-        </div>`).join("");
-  }
+  // Loading anzeigen
+  popup.innerHTML = `<div class="rp-header">⏳ Suche läuft...</div>`;
   popup.classList.add("show");
+
+  try {
+    // Azure AI Search REST API Call
+    const body = {
+      search: q,
+      queryType: "simple",
+      searchFields: "title,description,tag",
+      select: "id,title,description,tag,score",
+      top: 5,
+      count: true
+    };
+
+    // Filter nach Tag wenn aktiv
+    if (activeTag !== "all") {
+      body.filter = `tag eq '${activeTag}'`;
+    }
+
+    const res = await fetch(
+      `${AZURE_ENDPOINT}/indexes/${AZURE_INDEX}/docs/search?api-version=2024-07-01`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": AZURE_API_KEY
+        },
+        body: JSON.stringify(body)
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    const count = data["@odata.count"] || 0;
+    const results = data.value || [];
+
+    if (results.length === 0) {
+      popup.innerHTML = `<div class="rp-header">0 Treffer</div><div class="rp-empty">Keine Ergebnisse für „${q}"</div>`;
+    } else {
+      popup.innerHTML =
+        `<div class="rp-header">${count} TREFFER · Echter Azure AI Search Endpoint · Index: ${AZURE_INDEX}</div>` +
+        results.map(i => `
+          <div class="rp-item">
+            <span class="rp-score">@score: ${(i["@search.score"] || 0).toFixed(3)}</span>
+            <div class="rp-title">${i.title}<span class="rp-tag">${i.tag}</span></div>
+            <div class="rp-desc">${i.description}</div>
+          </div>`).join("");
+    }
+  } catch (err) {
+    popup.innerHTML = `
+      <div class="rp-header" style="color:#ff6b6b">❌ Fehler</div>
+      <div class="rp-empty">${err.message}<br><small>Prüfe den API-Key und CORS-Einstellungen.</small></div>`;
+  }
 }
 
 /* ════════════════════════════════════
