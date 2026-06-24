@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Azure AI Search</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wdth,wght@8..144,25..151,100..1000&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:#0a0f1e;color:white;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden}
+button,input{font-family:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#060c18}
+::-webkit-scrollbar-thumb{background:#0078d4;border-radius:3px}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(10,15,30,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;padding:0 40px;height:56px}
+.nav-logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px}
+.nav-links{display:flex;gap:28px}
+.nav-links a{font-size:14px;color:rgba(255,255,255,0.5);transition:color .2s}
+.nav-links a:hover{color:#50e6ff}
+.btn-primary{padding:7px 18px;background:#0078d4;color:white;border-radius:7px;font-size:13px;font-weight:600}
+.btn-primary:hover{background:#005fa3}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 40px 60px;text-align:center;position:relative;overflow:hidden}
+.glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(0,120,212,0.10) 0%,transparent 70%);top:-100px;left:50%;transform:translateX(-50%);pointer-events:none}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(80,230,255,0.10);border:1px solid rgba(80,230,255,0.25);border-radius:100px;padding:6px 18px;font-size:13px;font-weight:600;color:#50e6ff;margin-bottom:32px;opacity:0;animation:fadeUp .6s ease .1s forwards}
+.hero-title1{font-size:clamp(34px,6.5vw,70px);font-weight:700;letter-spacing:-2px;line-height:1.1;color:white;display:flex;flex-wrap:wrap;justify-content:center;margin-bottom:10px}
+.hero-title1 span{display:inline-block;opacity:0;filter:blur(10px);transform:translateY(-40px);animation:blurIn .5s ease forwards}
+.hero-title2{font-size:clamp(34px,6.5vw,70px);font-weight:700;letter-spacing:-2px;line-height:1.1;margin-bottom:32px}
+.hero-sub{font-size:18px;max-width:520px;margin-bottom:40px;line-height:1.7;font-weight:300;color:rgba(255,255,255,0.65);opacity:0;animation:fadeUp .6s ease .6s forwards}
+.hero-btns{display:flex;gap:14px;margin-bottom:52px;flex-wrap:wrap;justify-content:center;opacity:0;animation:fadeUp .6s ease .8s forwards}
+.btn-hero{padding:13px 28px;background:#0078d4;color:white;border-radius:8px;font-size:15px;font-weight:600}
+.btn-hero:hover{background:#005fa3}
+.btn-ghost{padding:13px 28px;background:rgba(255,255,255,0.07);color:white;border:1px solid rgba(255,255,255,0.18);border-radius:8px;font-size:15px;font-weight:600}
+.btn-ghost:hover{background:rgba(255,255,255,0.12)}
+
+/* gradient text animation */
+.grad-text{background:linear-gradient(to right,#50e6ff,#0078d4,#a259ff,#50e6ff,#0078d4,#50e6ff);background-size:300% 100%;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gradMove 5s ease-in-out infinite alternate}
+@keyframes gradMove{0%{background-position:0% 50%}100%{background-position:100% 50%}}
+
+/* ── SEARCH WIDGET ── */
+.search-widget{width:100%;max-width:680px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:14px;padding:20px 24px;backdrop-filter:blur(12px);position:relative;opacity:0;animation:fadeUp .6s ease 1s forwards}
+.sw-label{font-size:11px;color:rgba(255,255,255,0.35);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:10px;text-align:left}
+.sw-row{display:flex;gap:10px}
+.sw-wrap{flex:1;position:relative}
+.sw-wrap input{width:100%;padding:12px 14px 12px 40px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:white;font-size:15px;outline:none;transition:border-color .2s}
+.sw-wrap input:focus{border-color:#50e6ff}
+.sw-wrap input::placeholder{color:rgba(255,255,255,0.35)}
+.sw-icon{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none}
+.sw-btn{padding:12px 20px;background:#50e6ff;color:#003a6c;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;transition:background .2s}
+.sw-btn:hover{background:white}
+.sw-filters{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.sw-tag{padding:4px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:100px;font-size:12px;color:rgba(255,255,255,0.4);cursor:pointer;transition:all .2s}
+.sw-tag.active,.sw-tag:hover{background:rgba(80,230,255,0.12);border-color:#50e6ff;color:#50e6ff;font-weight:600}
+.results-popup{position:absolute;top:calc(100% + 8px);left:0;right:0;background:#0f1d2e;border:1px solid rgba(255,255,255,0.10);border-radius:10px;overflow:hidden;z-index:20;box-shadow:0 16px 48px rgba(0,0,0,0.6);display:none}
+.results-popup.show{display:block}
+.rp-header{padding:8px 14px;background:rgba(0,120,212,0.12);border-bottom:1px solid rgba(255,255,255,0.06);font-size:11px;color:#50e6ff;font-weight:600;letter-spacing:1px}
+.rp-item{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);cursor:default;transition:background .15s}
+.rp-item:hover{background:rgba(0,120,212,0.10)}
+.rp-item:last-child{border-bottom:none}
+.rp-title{font-size:14px;font-weight:600;color:#50e6ff}
+.rp-score{font-size:11px;color:#27c93f;font-weight:600;float:right}
+.rp-desc{font-size:12px;color:rgba(255,255,255,0.45);margin-top:3px}
+.rp-tag{font-size:10px;padding:2px 8px;background:rgba(0,120,212,0.2);color:#50e6ff;border-radius:100px;font-weight:600;margin-left:8px;white-space:nowrap}
+.rp-empty{padding:20px;text-align:center;color:rgba(255,255,255,0.35);font-size:14px}
+
+/* ── STATS ── */
+.stats-bar{background:#060c18;border-top:1px solid rgba(255,255,255,0.05);border-bottom:1px solid rgba(255,255,255,0.05);padding:32px 40px;display:flex;justify-content:center;gap:64px;flex-wrap:wrap}
+.stat-num{font-size:34px;font-weight:700;color:#50e6ff;line-height:1}
+.stat-lbl{font-size:13px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* ── TEXT PRESSURE ── */
+.tp-section{padding:72px 40px;background:#0a0f1e;text-align:center}
+.tp-inner{max-width:900px;margin:0 auto}
+.tp-label{font-size:12px;font-weight:700;color:#0078d4;letter-spacing:2px;text-transform:uppercase;margin-bottom:20px}
+.tp-stage{height:110px;position:relative}
+.tp-hint{font-size:14px;color:rgba(255,255,255,0.35);margin-top:12px}
+#tp-title{font-family:'Roboto Flex',sans-serif;text-transform:uppercase;font-weight:100;color:#50e6ff;white-space:nowrap;display:flex;justify-content:space-between;width:100%;height:100%;align-items:center;user-select:none}
+#tp-title span{display:inline-block;color:#50e6ff}
+
+/* ── SECTIONS ── */
+section{padding:80px 40px}
+.s-inner{max-width:1100px;margin:0 auto}
+.eyebrow{font-size:12px;font-weight:700;color:#0078d4;letter-spacing:2px;text-transform:uppercase;margin-bottom:14px}
+.s-title{font-size:clamp(26px,4vw,42px);font-weight:700;letter-spacing:-0.5px;margin-bottom:16px}
+.s-desc{font-size:16px;color:rgba(255,255,255,0.5);max-width:500px;line-height:1.7;margin-bottom:56px}
+.s-dark{background:#060c18}
+.s-mid{background:#0a0f1e}
+
+/* ── PIPELINE ── */
+.pipeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;position:relative;margin-bottom:56px}
+.pipe-line{position:absolute;top:31px;left:12.5%;right:12.5%;height:2px;background:linear-gradient(90deg,#0078d4,#50e6ff)}
+.pipe-step{display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 12px;position:relative;z-index:1}
+.pipe-icon{width:64px;height:64px;border-radius:50%;background:#060c18;border:2px solid #0078d4;display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;transition:all .25s}
+.pipe-step:hover .pipe-icon{background:#0078d4;transform:scale(1.1)}
+.pipe-label{font-size:14px;font-weight:700;margin-bottom:5px}
+.pipe-sub{font-size:12px;color:rgba(255,255,255,0.4)}
+
+/* ── ARCH ── */
+.arch{background:#0f1117;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:28px 36px}
+.arch-label{font-size:11px;font-weight:600;color:rgba(255,255,255,0.25);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:24px}
+.arch-grid{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center}
+.arch-node{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 10px;text-align:center}
+.arch-icon{font-size:26px;margin-bottom:7px}
+.arch-name{font-size:12px;font-weight:600;margin-bottom:3px}
+.arch-tag{font-size:10px;color:#50e6ff;font-weight:600}
+.arch-arrow{color:#50e6ff;font-size:18px;padding:0 10px;opacity:0.5;text-align:center}
+
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.feat-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:26px;transition:all .2s;cursor:default}
+.feat-card:hover{border-color:rgba(0,120,212,0.45);transform:translateY(-4px)}
+.feat-icon{font-size:26px;margin-bottom:14px}
+.feat-title{font-size:15px;font-weight:700;margin-bottom:9px}
+.feat-desc{font-size:13px;color:rgba(255,255,255,0.45);line-height:1.6;margin-bottom:12px}
+.feat-tag{font-size:11px;padding:3px 10px;background:rgba(0,120,212,0.12);color:#50e6ff;border-radius:100px;font-weight:600}
+
+/* ── API ── */
+.api-grid{display:grid;grid-template-columns:1fr 1fr;gap:52px;align-items:start}
+.api-benefits{display:flex;flex-direction:column;gap:22px}
+.benefit{display:flex;gap:14px;align-items:flex-start}
+.benefit-icon{width:36px;height:36px;min-width:36px;background:rgba(0,120,212,0.12);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.benefit-title{font-size:14px;font-weight:700;margin-bottom:3px}
+.benefit-desc{font-size:13px;color:rgba(255,255,255,0.4);line-height:1.5}
+.code-block{background:#0f1117;border-radius:14px;border:1px solid rgba(255,255,255,0.07);overflow:hidden}
+.code-header{padding:10px 18px;background:#16202e;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between}
+.code-dots{display:flex;gap:6px}
+.code-dot{width:11px;height:11px;border-radius:50%}
+.code-lang{font-size:11px;color:rgba(255,255,255,0.25);font-family:monospace}
+.code-block pre{padding:20px;font-size:12px;line-height:1.8;margin:0;overflow-x:auto;font-family:'Cascadia Code','Fira Code',monospace;color:rgba(255,255,255,0.8);white-space:pre-wrap}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.price-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:28px 24px;position:relative}
+.price-card.featured{background:rgba(0,120,212,0.07);border-color:rgba(0,120,212,0.45);transform:scale(1.03)}
+.price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#0078d4;color:white;font-size:11px;font-weight:700;padding:3px 14px;border-radius:100px;white-space:nowrap}
+.price-tier{font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+.price-num{font-size:38px;font-weight:700;line-height:1;margin-bottom:3px}
+.price-unit{font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:22px}
+.price-features{list-style:none;padding:0;margin-bottom:24px;display:flex;flex-direction:column;gap:9px}
+.price-features li{font-size:13px;color:rgba(255,255,255,0.55);display:flex;align-items:center;gap:9px}
+.check{width:17px;height:17px;min-width:17px;background:rgba(0,120,212,0.18);color:#50e6ff;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.price-btn{display:block;width:100%;padding:10px 0;color:white;border-radius:8px;font-weight:600;font-size:13px;text-align:center}
+.price-btn.outline{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10)}
+.price-btn.filled{background:#0078d4;border:1px solid #0078d4}
+
+/* ── CTA ── */
+.cta{padding:80px 40px;background:linear-gradient(135deg,#003a6c 0%,#0078d4 60%,#1a0050 100%);text-align:center}
+.cta h2{font-size:clamp(26px,4vw,46px);font-weight:700;margin-bottom:16px;letter-spacing:-0.5px}
+.cta p{font-size:16px;color:rgba(255,255,255,0.6);max-width:460px;margin:0 auto 40px;line-height:1.7}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-white{padding:14px 28px;background:white;color:#003a6c;border-radius:8px;font-weight:700;font-size:15px}
+.btn-white:hover{background:#e8f4ff}
+
+/* ── FOOTER ── */
+footer{background:#060a12;padding:48px 40px 28px;border-top:1px solid rgba(255,255,255,0.05)}
+.footer-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:40px;margin-bottom:40px}
+.footer-brand p{font-size:13px;color:rgba(255,255,255,0.3);line-height:1.6;max-width:240px;margin-top:10px}
+.footer-col h4{font-size:11px;font-weight:700;color:rgba(255,255,255,0.35);margin-bottom:14px;text-transform:uppercase;letter-spacing:1px}
+.footer-col ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:9px}
+.footer-col a{font-size:13px;color:rgba(255,255,255,0.3);transition:color .2s}
+.footer-col a:hover{color:#50e6ff}
+.footer-bottom{max-width:1100px;margin:0 auto;padding-top:22px;border-top:1px solid rgba(255,255,255,0.05);display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,0.2)}
+
+/* ── FADE-IN ON SCROLL ── */
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.fade-in.visible{opacity:1;transform:none}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+@keyframes blurIn{to{opacity:1;filter:blur(0);transform:none}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <rect width="24" height="24" rx="5" fill="#0078d4"/>
+      <circle cx="10" cy="10" r="4.5" stroke="#50e6ff" stroke-width="2"/>
+      <line x1="13.5" y1="13.5" x2="19" y2="19" stroke="#50e6ff" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    Azure AI Search
+  </div>
+  <div class="nav-links">
+    <a href="#how">Wie es funktioniert</a>
+    <a href="#features">Features</a>
+    <a href="#api">API</a>
+    <a href="#pricing">Preise</a>
+  </div>
+  <a href="https://azure.microsoft.com/en-us/products/ai-services/ai-search" target="_blank" class="btn-primary">Kostenlos starten</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="glow"></div>
+
+  <div class="badge">✦ Microsoft Azure – AI-powered Search</div>
+
+  <div class="hero-title1" id="blurTitle"></div>
+
+  <div class="hero-title2">
+    <span class="grad-text">die Kontext versteht</span>
+  </div>
+
+  <p class="hero-sub">
+    Azure AI Search verbindet Datenquellen mit semantischem Retrieval, Vektorsuche und RAG-Pipelines – in einer Plattform.
+  </p>
+
+  <div class="hero-btns">
+    <a href="https://azure.microsoft.com/en-us/products/ai-services/ai-search" target="_blank" class="btn-hero">▶ Gratis testen – 250 MB frei</a>
+    <a href="https://learn.microsoft.com/en-us/azure/search/" target="_blank" class="btn-ghost">Dokumentation lesen</a>
+  </div>
+
+  <!-- Search Widget -->
+  <div class="search-widget">
+    <p class="sw-label">Live Demo · Azure AI Search Endpoint</p>
+    <div class="sw-row">
+      <div class="sw-wrap">
+        <span class="sw-icon">🔍</span>
+        <input id="searchInput" type="text" placeholder='z.B. "Cloud Datenbank", "KI serverless"...'/>
+        <div class="results-popup" id="resultsPopup"></div>
+      </div>
+      <button class="sw-btn" onclick="doSearch()">Suchen →</button>
+    </div>
+    <div class="sw-filters" id="filters">
+      <span class="sw-tag active" data-tag="all">Alle</span>
+      <span class="sw-tag" data-tag="KI">KI</span>
+      <span class="sw-tag" data-tag="Compute">Compute</span>
+      <span class="sw-tag" data-tag="Datenbank">Datenbank</span>
+      <span class="sw-tag" data-tag="Storage">Storage</span>
+      <span class="sw-tag" data-tag="Serverless">Serverless</span>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div><div class="stat-num">99.9%</div><div class="stat-lbl">SLA Verfügbarkeit</div></div>
+  <div><div class="stat-num">&lt;100ms</div><div class="stat-lbl">Abfragelatenz p99</div></div>
+  <div><div class="stat-num">40+</div><div class="stat-lbl">Sprachen</div></div>
+  <div><div class="stat-num">60+</div><div class="stat-lbl">Azure Regionen</div></div>
+</div>
+
+<!-- TEXT PRESSURE -->
+<div class="tp-section">
+  <div class="tp-inner">
+    <p class="tp-label">Interaktiv</p>
+    <div class="tp-stage">
+      <h1 id="tp-title"></h1>
+    </div>
+    <p class="tp-hint">Bewege die Maus über den Text ↑</p>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="s-dark" id="how">
+  <div class="s-inner">
+    <p class="eyebrow">Wie es funktioniert</p>
+    <h2 class="s-title">Von der Datenquelle zum Suchergebnis</h2>
+    <p class="s-desc">Azure AI Search übernimmt den gesamten Weg: einlesen, anreichern, indizieren und semantisch suchen.</p>
+
+    <div class="pipeline">
+      <div class="pipe-line"></div>
+      <div class="pipe-step fade-in">
+        <div class="pipe-icon">📦</div>
+        <div class="pipe-label">Datenquellen</div>
+        <div class="pipe-sub">Blob · SQL · Cosmos · API</div>
+      </div>
+      <div class="pipe-step fade-in" style="transition-delay:.12s">
+        <div class="pipe-icon">⚙️</div>
+        <div class="pipe-label">Indexer & Skillsets</div>
+        <div class="pipe-sub">OCR · NER · Chunking · AI</div>
+      </div>
+      <div class="pipe-step fade-in" style="transition-delay:.24s">
+        <div class="pipe-icon">🗂️</div>
+        <div class="pipe-label">Search Index</div>
+        <div class="pipe-sub">Vektor + Volltext parallel</div>
+      </div>
+      <div class="pipe-step fade-in" style="transition-delay:.36s">
+        <div class="pipe-icon">🔎</div>
+        <div class="pipe-label">Abfrage & RAG</div>
+        <div class="pipe-sub">Hybrid · Semantic · GPT-4</div>
+      </div>
+    </div>
+
+    <div class="arch">
+      <p class="arch-label">Architektur-Übersicht</p>
+      <div class="arch-grid">
+        <div class="arch-node"><div class="arch-icon">🗄️</div><div class="arch-name">Ihre Daten</div><div class="arch-tag">Blob / SQL / API</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-icon">🤖</div><div class="arch-name">Azure OpenAI</div><div class="arch-tag">Embeddings / GPT</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-icon">🔍</div><div class="arch-name">AI Search Index</div><div class="arch-tag">Vektor + Volltext</div></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-node"><div class="arch-icon">📱</div><div class="arch-name">Ihre App</div><div class="arch-tag">REST / SDK</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="s-mid" id="features">
+  <div class="s-inner">
+    <p class="eyebrow">Kernfunktionen</p>
+    <h2 class="s-title">Alles, was moderne Suche braucht</h2>
+    <div class="features-grid">
+      <div class="feat-card fade-in"><div class="feat-icon">🧠</div><div class="feat-title">Semantisches Reranking</div><div class="feat-desc">ML-Modelle bewerten Ergebnisse nach inhaltlicher Relevanz – nicht nur Stichwörtern.</div><span class="feat-tag">KI</span></div>
+      <div class="feat-card fade-in" style="transition-delay:.08s"><div class="feat-icon">📐</div><div class="feat-title">Vektorsuche</div><div class="feat-desc">Embeddings von Azure OpenAI direkt im Index. Ähnlichkeitssuche über alle Datentypen.</div><span class="feat-tag">Embeddings</span></div>
+      <div class="feat-card fade-in" style="transition-delay:.16s"><div class="feat-icon">🔀</div><div class="feat-title">Hybrid Search</div><div class="feat-desc">BM25 + Vektorsuche kombiniert mit Reciprocal Rank Fusion (RRF).</div><span class="feat-tag">Fusion</span></div>
+      <div class="feat-card fade-in" style="transition-delay:.24s"><div class="feat-icon">⚡</div><div class="feat-title">RAG-Pipelines</div><div class="feat-desc">GPT-4 direkt an Ihre Unternehmensdaten koppeln für präzise Antworten.</div><span class="feat-tag">GenAI</span></div>
+      <div class="feat-card fade-in" style="transition-delay:.32s"><div class="feat-icon">🛡️</div><div class="feat-title">Enterprise Security</div><div class="feat-desc">RBAC, Private Endpoints, CMK – Microsoft Entra ID inklusive.</div><span class="feat-tag">Security</span></div>
+      <div class="feat-card fade-in" style="transition-delay:.40s"><div class="feat-icon">⚙️</div><div class="feat-title">KI-Anreicherung</div><div class="feat-desc">Skillsets extrahieren Entitäten und Text aus PDFs und Bildern beim Indizieren.</div><span class="feat-tag">Indexer</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- API -->
+<section class="s-dark" id="api">
+  <div class="s-inner">
+    <div class="api-grid">
+      <div>
+        <p class="eyebrow">Entwickler-API</p>
+        <h2 class="s-title">In 5 Minuten integriert</h2>
+        <p style="font-size:15px;color:rgba(255,255,255,0.45);line-height:1.7;margin-bottom:36px">Echter REST-Endpoint, SDKs für Python, .NET, Java und JavaScript.</p>
+        <div class="api-benefits">
+          <div class="benefit"><div class="benefit-icon">🔑</div><div><div class="benefit-title">API-Key oder Managed Identity</div><div class="benefit-desc">Für schnellen Start per API-Key, oder produktionsreif per Entra ID ohne Secrets.</div></div></div>
+          <div class="benefit"><div class="benefit-icon">📡</div><div><div class="benefit-title">Echter REST-Endpoint</div><div class="benefit-desc">Jeder Service erhält einen eigenen HTTPS-Endpoint auf Microsofts Infrastruktur.</div></div></div>
+          <div class="benefit"><div class="benefit-icon">📈</div><div><div class="benefit-title">@search.score &amp; Captions</div><div class="benefit-desc">Jedes Ergebnis liefert Relevanz-Score und semantische Captions.</div></div></div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header">
+          <div class="code-dots">
+            <span class="code-dot" style="background:#ff5f56"></span>
+            <span class="code-dot" style="background:#ffbd2e"></span>
+            <span class="code-dot" style="background:#27c93f"></span>
+          </div>
+          <span class="code-lang">POST /indexes/products/docs/search</span>
+        </div>
+        <pre>// Hybrid: Volltext + Vektor + Semantik
+const response = await fetch(
+  `https://${service}.search.windows.net
+    /indexes/products/docs/search`,
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'api-key': process.env.AZURE_KEY
+    },
+    body: JSON.stringify({
+      search: "Cloud Datenbank",
+      queryType: "semantic",
+      vectorQueries: [{
+        kind: "text",
+        text: "Cloud Datenbank",
+        fields: "embedding",
+        k: 5
+      }],
+      top: 5
+    })
+  }
+);
+// → Semantisch geranktes Ergebnis-Array</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="s-mid" id="pricing">
+  <div class="s-inner">
+    <p class="eyebrow" style="text-align:center">Preismodell</p>
+    <h2 class="s-title" style="text-align:center;margin-bottom:48px">Skaliert mit Ihrer Nutzung</h2>
+    <div class="pricing-grid">
+      <div class="price-card fade-in">
+        <div class="price-tier">Free</div>
+        <div class="price-num"><sup style="font-size:18px;vertical-align:super">$</sup>0</div>
+        <div class="price-unit">für immer kostenlos</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span>1 Search Service</li>
+          <li><span class="check">✓</span>3 Indizes</li>
+          <li><span class="check">✓</span>50 MB Datenspeicher</li>
+          <li><span class="check">✓</span>Volltext-Suche</li>
+          <li><span class="check">✓</span>REST API</li>
+        </ul>
+        <a href="https://azure.microsoft.com/en-us/products/ai-services/ai-search" target="_blank" class="price-btn outline">Gratis starten</a>
+      </div>
+      <div class="price-card featured fade-in" style="transition-delay:.1s">
+        <div class="price-badge">Empfohlen</div>
+        <div class="price-tier">Standard S1</div>
+        <div class="price-num"><sup style="font-size:18px;vertical-align:super">$</sup>250</div>
+        <div class="price-unit">pro Monat / Search Unit</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span>50 Indizes</li>
+          <li><span class="check">✓</span>25 GB Datenspeicher</li>
+          <li><span class="check">✓</span>Semantische Suche</li>
+          <li><span class="check">✓</span>Vektorsuche</li>
+          <li><span class="check">✓</span>KI-Anreicherung</li>
+          <li><span class="check">✓</span>SLA 99.9%</li>
+        </ul>
+        <a href="https://azure.microsoft.com/en-us/products/ai-services/ai-search" target="_blank" class="price-btn filled">Jetzt starten</a>
+      </div>
+      <div class="price-card fade-in" style="transition-delay:.2s">
+        <div class="price-tier">Storage Optimized</div>
+        <div class="price-num"><sup style="font-size:18px;vertical-align:super">$</sup>2.000</div>
+        <div class="price-unit">pro Monat / Search Unit</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span>Bis 2 TB Speicher</li>
+          <li><span class="check">✓</span>Dokumenten-Analyse</li>
+          <li><span class="check">✓</span>Private Link</li>
+          <li><span class="check">✓</span>CMK</li>
+          <li><span class="check">✓</span>Priority Support</li>
+        </ul>
+        <a href="https://azure.microsoft.com/en-us/products/ai-services/ai-search" target="_blank" class="price-btn outline">Kontakt</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<div class="cta">
+  <h2>Bereit für echte KI-Suche?</h2>
+  <p>Ersten Azure AI Search Index in unter 10 Minuten einrichten – direkt im Azure Portal.</p>
+  <div class="cta-btns">
+    <a href="https://portal.azure.com" target="_blank" class="btn-white">Im Azure Portal öffnen</a>
+    <a href="https://learn.microsoft.com/en-us/azure/search/search-get-started-portal" target="_blank" class="btn-ghost">Quickstart ansehen</a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect width="24" height="24" rx="5" fill="#0078d4"/><circle cx="10" cy="10" r="4.5" stroke="#50e6ff" stroke-width="2"/><line x1="13.5" y1="13.5" x2="19" y2="19" stroke="#50e6ff" stroke-width="2" stroke-linecap="round"/></svg>
+        <span style="font-size:14px;font-weight:700;color:rgba(255,255,255,0.75)">Azure AI Search</span>
+      </div>
+      <p>KI-gestützte Suchinfrastruktur von Microsoft Azure. Skalierbar, sicher, sofort einsatzbereit.</p>
+    </div>
+    <div class="footer-col"><h4>Produkt</h4><ul><li><a href="#">Übersicht</a></li><li><a href="#">Features</a></li><li><a href="#">Preise</a></li><li><a href="#">SLA</a></li><li><a href="#">Regionen</a></li></ul></div>
+    <div class="footer-col"><h4>Entwickler</h4><ul><li><a href="#">Quickstart</a></li><li><a href="#">REST API Ref</a></li><li><a href="#">Python SDK</a></li><li><a href="#">.NET SDK</a></li><li><a href="#">GitHub</a></li></ul></div>
+    <div class="footer-col"><h4>Microsoft</h4><ul><li><a href="#">Azure Portal</a></li><li><a href="#">Azure OpenAI</a></li><li><a href="#">MS Learn</a></li><li><a href="#">Datenschutz</a></li><li><a href="#">AGB</a></li></ul></div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 Microsoft Corporation. Alle Rechte vorbehalten.</span>
+    <span>🪟 Microsoft Azure</span>
+  </div>
+</footer>
+
+<script>
+/* ════════════════════════════════════
+   BLUR TEXT HERO
+════════════════════════════════════ */
+const words = "Intelligente Suche,".split(" ");
+const titleEl = document.getElementById("blurTitle");
+words.forEach((w, i) => {
+  const span = document.createElement("span");
+  span.textContent = w;
+  span.style.animationDelay = (i * 0.15 + 0.3) + "s";
+  if (i < words.length - 1) span.textContent += "\u00A0";
+  titleEl.appendChild(span);
+});
+
+/* ════════════════════════════════════
+   TEXT PRESSURE
+════════════════════════════════════ */
+(function() {
+  const text = "AZURE AI SEARCH";
+  const container = document.querySelector(".tp-stage");
+  const title = document.getElementById("tp-title");
+  const chars = text.split("");
+  const spans = [];
+
+  chars.forEach(c => {
+    const s = document.createElement("span");
+    s.textContent = c === " " ? "\u00A0" : c;
+    title.appendChild(s);
+    spans.push(s);
+  });
+
+  // set font size
+  function resize() {
+    const w = container.offsetWidth;
+    const fs = Math.max(w / (chars.length / 2), 18);
+    title.style.fontSize = fs + "px";
+  }
+  resize();
+  window.addEventListener("resize", resize);
+
+  const mouse = { x: 0, y: 0 };
+  const cursor = { x: 0, y: 0 };
+
+  window.addEventListener("mousemove", e => { cursor.x = e.clientX; cursor.y = e.clientY; });
+
+  // init cursor to center
+  const r = container.getBoundingClientRect();
+  cursor.x = mouse.x = r.left + r.width / 2;
+  cursor.y = mouse.y = r.top + r.height / 2;
+
+  function dist(a, b) { const dx=b.x-a.x,dy=b.y-a.y; return Math.sqrt(dx*dx+dy*dy); }
+  function attr(d, max, mn, mx) { return Math.max(mn, mx - Math.abs(mx*d/max) + mn); }
+
+  function animate() {
+    mouse.x += (cursor.x - mouse.x) / 15;
+    mouse.y += (cursor.y - mouse.y) / 15;
+    const tr = title.getBoundingClientRect();
+    const maxD = tr.width / 2 || 1;
+    spans.forEach(s => {
+      const sr = s.getBoundingClientRect();
+      const d = dist(mouse, { x: sr.x + sr.width/2, y: sr.y + sr.height/2 });
+      const wght = Math.floor(attr(d, maxD, 100, 900));
+      const wdth = Math.floor(attr(d, maxD, 5, 200));
+      const ital = attr(d, maxD, 0, 1).toFixed(2);
+      s.style.fontVariationSettings = `'wght' ${wght},'wdth' ${wdth},'ital' ${ital}`;
+    });
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+/* ════════════════════════════════════
+   SEARCH
+════════════════════════════════════ */
+const SEARCH_DATA = [
+  {title:"Azure Container Apps",desc:"Skalierbare Container ohne Serververwaltung.",tag:"Compute",score:0.97},
+  {title:"Azure OpenAI Service",desc:"GPT-4, DALL·E und Embeddings in eigenen Apps.",tag:"KI",score:0.96},
+  {title:"Azure AI Search",desc:"KI-gestützte Suche: Volltext, Vektor, Semantik.",tag:"KI",score:0.99},
+  {title:"Azure Cosmos DB",desc:"Global verteilte NoSQL-Datenbank, ms-Latenz.",tag:"Datenbank",score:0.93},
+  {title:"Azure Functions",desc:"Serverless Code – zahle nur was du nutzt.",tag:"Serverless",score:0.91},
+  {title:"Azure Blob Storage",desc:"Unbegrenzt Dateien und Bilder in der Cloud.",tag:"Storage",score:0.88},
+  {title:"Azure SQL Database",desc:"Verwaltete relationale DB auf SQL Server Basis.",tag:"Datenbank",score:0.92},
+  {title:"Azure Kubernetes Service",desc:"Verwaltetes K8s für Container-Workloads.",tag:"Compute",score:0.90},
+];
+
+let activeTag = "all";
+const popup = document.getElementById("resultsPopup");
+const input = document.getElementById("searchInput");
+
+document.querySelectorAll(".sw-tag").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".sw-tag").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    activeTag = t.dataset.tag;
+    doSearch();
+  });
+});
+
+input.addEventListener("input", () => doSearch());
+input.addEventListener("keydown", e => { if (e.key === "Enter") doSearch(); });
+document.addEventListener("click", e => { if (!e.target.closest(".sw-wrap") && !e.target.closest(".sw-btn")) popup.classList.remove("show"); });
+
+function doSearch() {
+  const q = input.value.toLowerCase().trim();
+  if (!q) { popup.classList.remove("show"); return; }
+
+  let res = SEARCH_DATA.filter(i =>
+    i.title.toLowerCase().includes(q) ||
+    i.desc.toLowerCase().includes(q) ||
+    i.tag.toLowerCase().includes(q)
+  );
+  if (activeTag !== "all") res = res.filter(i => i.tag === activeTag);
+  res = res.map(i => ({...i, rel: i.title.toLowerCase().includes(q) ? i.score : i.score*0.82}))
+           .sort((a,b) => b.rel - a.rel);
+
+  if (res.length === 0) {
+    popup.innerHTML = `<div class="rp-header">0 Treffer</div><div class="rp-empty">Keine Ergebnisse für „${input.value}"</div>`;
+  } else {
+    popup.innerHTML = `<div class="rp-header">${res.length} TREFFER · queryType: semantic · vectorSearch: hnsw</div>` +
+      res.slice(0,5).map(i => `
+        <div class="rp-item">
+          <span class="rp-score">@score: ${i.rel.toFixed(3)}</span>
+          <div class="rp-title">${i.title}<span class="rp-tag">${i.tag}</span></div>
+          <div class="rp-desc">${i.desc}</div>
+        </div>`).join("");
+  }
+  popup.classList.add("show");
+}
+
+/* ════════════════════════════════════
+   SCROLL FADE-IN
+════════════════════════════════════ */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll(".fade-in").forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
